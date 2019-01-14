@@ -11,6 +11,9 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
+import android.support.annotation.Px;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.AppCompatEditText;
 import android.text.InputType;
@@ -40,15 +43,22 @@ import android.view.MotionEvent;
  * 10、将background的states转移到自己定义background上   ✔
  * 11、高度或者宽度写太小会gg
  * 12、在写xml时能看到btn和label
- * 13、setErr 图标的处理
- * 14、setDrawable 自定义图标
+ * 13、setErr 图标的处理 ：先隐藏自己的图标，输入之后再重新显示
  * 15、Label 文字换行
  * 16、background选中动画
- * 17、Label 动态更换文字
+ * 17、Label 动态更换文字 ✔
+ * 18、按钮误触问题
  */
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class HardEditText extends AppCompatEditText {
 
     private boolean DEBUG = true;
+
+    private void log(String s) {
+        if (DEBUG) {
+            Log.d("HardEditText", s);
+        }
+    }
     private static final int DEFAULT_CLEAR_ICON = R.drawable.ic_clear_24dp;
     private static final int DEFAULT_VISIBLE_ICON = R.drawable.ic_visibility_24dp;
     private static final int DEFAULT_INVISIBLE_ICON = R.drawable.ic_visibility_off_24dp;
@@ -66,29 +76,33 @@ public class HardEditText extends AppCompatEditText {
     private boolean enableHideWithClearBtn;  //是否和ClearBtn一起消失
     private boolean enableLabel;             //开启Label的功能
 
+
+    private Drawable mClearBtnDrawable;
+    private Drawable mVisibleBtnDrawable;
+    private Drawable mInvisibleBtnDrawable;
+    private Drawable mBackground;
+
     private Bitmap mClearBtnBitmap;
     private Bitmap mVisibleBtnBitmap;
     private Bitmap mInvisibleBtnBitmap;
-    private Drawable mBackground;
 
     private int mBtnSize;           //按钮的高度和宽度（限定为方形）
     private int mBtnPadding;        //Btn Padding
-    private int mBtnColor;          //Btn的颜色
     private int mBtnTranslationX;   //Btn的水平偏移量
 
     private String mLabelText;      //label的文字内容
     private int mLabelTextSize;     //label的文字大小
     private int mLabelTextColor;    //label的文字颜色
-    private int mLabelGravity;      //label的Gravity: left | center |right
+    private int mLabelGravity;      //label的Gravity: left | center | right
     private int mLabelPaddingTop;   //label PaddingTop
     private int mLabelPaddingBottom;//label PaddingBottom（与文字）
     private int mLabelTranslationX; //label的水平偏移量
 
 
-    private int mEditPaddingLeft;   //外部的padding
-    private int mEditPaddingRight;  //外部的padding
-    private int mEditPaddingTop;    //外部的padding
-    private int mEditPaddingBottom; //外部的padding
+    private int mTextPaddingLeft;
+    private int mTextPaddingRight;
+    private int mTextPaddingTop;
+    private int mTextPaddingBottom;
 
 
     private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -107,6 +121,8 @@ public class HardEditText extends AppCompatEditText {
     private ValueAnimator mLabelAnimator;   //Label动画
     private float mBtnFraction;
     private float mLabelFraction;
+
+    private boolean isErr;
 
 
     private static final int VALUE_ANIMATOR_TIME = 200;  //全局动画时间
@@ -137,7 +153,7 @@ public class HardEditText extends AppCompatEditText {
         enableHideWithClearBtn = array.getBoolean(R.styleable.HardEditText_enableHideWithClearBtn, true);
         mBtnSize = array.getDimensionPixelSize(R.styleable.HardEditText_btnSize, DEFAULT_BTN_SIZE);
         mBtnPadding = array.getDimensionPixelSize(R.styleable.HardEditText_btnPadding, DEFAULT_BTN_PADDING);
-        mBtnColor = array.getColor(R.styleable.HardEditText_btnColor, -1);
+        int mBtnColor = array.getColor(R.styleable.HardEditText_btnColor, -1);
         mBtnTranslationX = array.getDimensionPixelSize(R.styleable.HardEditText_btnTranslationX, 0);
 
 
@@ -146,7 +162,7 @@ public class HardEditText extends AppCompatEditText {
         int invisibleBtnResId = array.getResourceId(R.styleable.HardEditText_invisibleSrc, DEFAULT_INVISIBLE_ICON);
         int backgroundResId = array.getResourceId(R.styleable.HardEditText_background, -1);
 
-        //if null. it will be hintText;
+
         enableLabel = array.getBoolean(R.styleable.HardEditText_enableLabel, true);
         mLabelText = array.getString(R.styleable.HardEditText_labelText);
         mLabelTextSize = array.getDimensionPixelSize(R.styleable.HardEditText_labelTextSize, DEFAULT_LABEL_TEXT_SIZE);
@@ -154,12 +170,9 @@ public class HardEditText extends AppCompatEditText {
         mLabelPaddingTop = array.getDimensionPixelSize(R.styleable.HardEditText_labelPaddingTop, DEFAULT_LABEL_PADDING_TOP);
         mLabelPaddingBottom = array.getDimensionPixelSize(R.styleable.HardEditText_labelPaddingBottom, DEFAULT_LABEL_PADDING_BOTTOM);
         mLabelTranslationX = array.getDimensionPixelSize(R.styleable.HardEditText_labelTranslationX, 0);
-
-        if (mLabelText == null) mLabelText = getHint().toString();
-
         array.recycle();
 
-        //拿到三个Icon的bitmap
+        //getBitmap and setBitmapColor
         mClearBtnBitmap = getBitmap(context, clearBtnResId, mBtnColor);
         mVisibleBtnBitmap = getBitmap(context, visibleBtnResId, mBtnColor);
         mInvisibleBtnBitmap = getBitmap(context, invisibleBtnResId, mBtnColor);
@@ -184,8 +197,8 @@ public class HardEditText extends AppCompatEditText {
             }
         });
 
-        mTextPaint.setColor(mLabelTextColor);
-        mTextPaint.setTextSize(mLabelTextSize);
+        //if mLabelText is null. it will be hintText;
+        if (mLabelText == null && getHint() != null) mLabelText = getHint().toString();
         mLabelGravity = getGravity();
 
         if (getRootView().isInEditMode()) {
@@ -203,10 +216,10 @@ public class HardEditText extends AppCompatEditText {
         setPadding(getPaddingLeft(), getPaddingTop(), getPaddingRight(), getPaddingBottom());
     }
 
+
     @Override
     protected void onDraw(Canvas canvas) {
-        //由于光标的闪烁和文字的输入，会不断地draw,会清空之前的图标
-        //TODO maybe可以保存一下，减少重draw，提高性能
+        //onFocus the EditText will be keep draw,the btn will be gone if no draw.
         drawBackground(canvas);
         drawBtnAndLabel(canvas);
 
@@ -230,14 +243,14 @@ public class HardEditText extends AppCompatEditText {
         //drawClearBtn and drawVisibleBtn
         boolean invalidate = false;
         if (mBtnAnimator.isRunning()) {
-            //动画部分
+            //Anim part
             drawClearBtn(mBtnFraction, canvas);
             if (enableHideWithClearBtn)
                 drawVisibleBtn(mBtnFraction, canvas);
             else drawVisibleBtn(1, canvas);
             invalidate = true;
         } else {
-            //静态部分
+            //Static part
             drawClearBtn(isClearBtnVisible ? 1 : 0, canvas);
             if (enableHideWithClearBtn)
                 drawVisibleBtn(isClearBtnVisible ? 1 : 0, canvas);
@@ -258,16 +271,16 @@ public class HardEditText extends AppCompatEditText {
 
     private void drawClearBtn(float animValue, Canvas canvas) {
         if (enableClearBtn && animValue != 0) {
-            //当singleLine 超出部分是会向左滑动，ScrollX增加，按钮要向右移动来抵消偏移
-            mClearBtnRect.right = (int) (getWidth() + getScrollX() + mBtnTranslationX - mBtnPadding - mEditPaddingRight
-                    - (mBtnSize - mBtnSize * animValue) / 2);
-            if (enablePwVisibleBtn) //如果右侧有PwVisibleBtn就再向左偏移一个按钮的距离
+            // if EditText is singleLine ,when the text over the width,EditText will scroll left
+            // so we need add ScrollX
+            mClearBtnRect.right = (int) (getWidth() + getScrollX() + mBtnTranslationX
+                    - mBtnPadding - mTextPaddingRight - (mBtnSize - mBtnSize * animValue) / 2);
+            if (enablePwVisibleBtn) //if we have the PwVisibleBtn at right,add one mBtnSize and padding
                 mClearBtnRect.right -= mBtnSize + mBtnPadding;
             mClearBtnRect.left = (int) (mClearBtnRect.right - mBtnSize * animValue);
             mClearBtnRect.top = (int) ((getHeight() + getLabelSpace() - mBtnSize * animValue) / 2 + getScrollY());
             mClearBtnRect.bottom = (int) (mClearBtnRect.top + mBtnSize * animValue);
-            //Rect rect = new Rect(left, top, right, bottom);
-            //src是对原图片裁剪，第二个是裁剪后的位置
+            //src will crop original Bitmap，then the dst is after rect.
             canvas.drawBitmap(mClearBtnBitmap, null, mClearBtnRect, mPaint);
         }
 
@@ -275,8 +288,8 @@ public class HardEditText extends AppCompatEditText {
 
     private void drawVisibleBtn(float animValue, Canvas canvas) {
         if (enablePwVisibleBtn && animValue != 0) {
-            mPwVisibleBtnRect.right = (int) (getWidth() + getScrollX() + mBtnTranslationX - mBtnPadding - mEditPaddingRight
-                    - (mBtnSize - mBtnSize * animValue) / 2);
+            mPwVisibleBtnRect.right = (int) (getWidth() + getScrollX() + mBtnTranslationX
+                    - mBtnPadding - mTextPaddingRight - (mBtnSize - mBtnSize * animValue) / 2);
             mPwVisibleBtnRect.left = (int) (mPwVisibleBtnRect.right - mBtnSize * animValue);
             mPwVisibleBtnRect.top = (int) ((getHeight() + getLabelSpace() - mBtnSize * animValue) / 2 + getScrollY());
             mPwVisibleBtnRect.bottom = (int) (mPwVisibleBtnRect.top + mBtnSize * animValue);
@@ -288,24 +301,24 @@ public class HardEditText extends AppCompatEditText {
     }
 
     private void drawLabel(float animValue, Canvas canvas) {
-        if (enableLabel && animValue != 0) {
+        if (enableLabel && mLabelText != null && animValue != 0) {
             int startX = mLabelTranslationX + getScrollX();
-            //drawText 是从baseLine开始，需要向下移动 baseLine-top
+            //drawText start baseLine, so startY need sub MetricsTop
             int startY = (int) (mLabelPaddingTop - mTextPaint.getFontMetrics().top + (1 - animValue) * mLabelTextSize) + getScrollY();
             if ((mLabelGravity & Gravity.START) == Gravity.START) {
                 //left
                 startX += 0;
             } else if ((mLabelGravity & Gravity.END) == Gravity.END) {
                 //right
-                startX += (int) (getWidth() - mEditPaddingRight - mTextPaint.measureText(mLabelText));
+                startX += (int) (getWidth() - mTextPaddingRight - mTextPaint.measureText(mLabelText));
             } else {
                 //center
                 startX += (int) (getWidth() - mTextPaint.measureText(mLabelText)) / 2;
             }
 
-            int alpha = (int) (255 * animValue);
-            mTextPaint.setAlpha(alpha);
-
+            mTextPaint.setAlpha((int) (255 * animValue));
+            mTextPaint.setColor(mLabelTextColor);
+            mTextPaint.setTextSize(mLabelTextSize);
             canvas.drawText(mLabelText, startX, startY, mTextPaint);
         }
 
@@ -314,6 +327,10 @@ public class HardEditText extends AppCompatEditText {
 
     private Bitmap getBitmap(Context context, int resId, int color) {
         Drawable drawable = ContextCompat.getDrawable(context, resId);
+        return getBitmap(context, drawable, color);
+    }
+
+    private Bitmap getBitmap(Context context, Drawable drawable, int color) {
         if (drawable != null) {
             if (color != -1) {
                 drawable.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
@@ -325,10 +342,9 @@ public class HardEditText extends AppCompatEditText {
             return bitmap;
         }
         return null;
-
     }
 
-    //将原本drawableState转移到自己定义的background
+    //getOriginalBackground drawableState and set mBackground
     @Override
     protected void drawableStateChanged() {
         if (mBackground != null && mBackground.isStateful()) {
@@ -354,6 +370,11 @@ public class HardEditText extends AppCompatEditText {
     @Override
     public void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
         super.onTextChanged(text, start, lengthBefore, lengthAfter);
+        if (isErr){
+            setPadding(mTextPaddingLeft, mTextPaddingTop, mTextPaddingRight , mTextPaddingBottom);
+            isErr = false;
+        }
+
         if (enableClearBtn) {
             if (text.length() > 0) {
                 if (!isClearBtnVisible) setClearBtnVisible(true);
@@ -371,18 +392,18 @@ public class HardEditText extends AppCompatEditText {
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_UP) {
             if (enableClearBtn || enablePwVisibleBtn) {
-                int visibleBtnRight = getWidth() + mBtnTranslationX - mBtnPadding - mEditPaddingRight;
+                int visibleBtnRight = getWidth() + mBtnTranslationX - mBtnPadding - mTextPaddingRight;
                 int clearBtnRight = visibleBtnRight;
                 if (enablePwVisibleBtn)
                     clearBtnRight -= mBtnSize + mBtnPadding;
                 boolean isClearBtnTouch = clearBtnRight > event.getX()
                         && clearBtnRight - mBtnSize < event.getX()
-                        && getLabelSpace() + mEditPaddingTop < event.getY();
+                        && getLabelSpace() + mTextPaddingTop < event.getY();
                 boolean isPwVisibleBtnTouch = visibleBtnRight > event.getX()
                         && visibleBtnRight - mBtnSize < event.getX()
-                        && getLabelSpace() + mEditPaddingTop < event.getY();
+                        && getLabelSpace() + mTextPaddingTop < event.getY();
 
-                if (enableClearBtn && isClearBtnTouch) {
+                if (enableClearBtn && isClearBtnVisible && isClearBtnTouch) {
                     setText("");
                     //do not return true,otherwise can't getDrawableState().
                 } else if (enablePwVisibleBtn && isPwVisibleBtnTouch) {
@@ -411,7 +432,7 @@ public class HardEditText extends AppCompatEditText {
         } else {
             setTransformationMethod(null);
         }
-        setSelection(getText().length());
+        setSelection(getText() != null ? getText().length() : 0);
         this.isPasswordInputType = isPwMode;
         invalidate();
     }
@@ -440,13 +461,22 @@ public class HardEditText extends AppCompatEditText {
 
 
     @Override
+    public void setError(CharSequence error) {
+        isErr = true;
+        super.setPadding(mTextPaddingLeft, mTextPaddingTop, mTextPaddingRight , mTextPaddingBottom);
+        isClearBtnVisible = false;
+
+        super.setError(error);
+    }
+
+    @Override
     public void setPadding(int left, int top, int right, int bottom) {
-        mEditPaddingLeft = left;
-        mEditPaddingTop = top;
-        mEditPaddingRight = right;
-        mEditPaddingBottom = bottom;
-        super.setPadding(mEditPaddingLeft, mEditPaddingTop + getLabelSpace(),
-                mEditPaddingRight + getBtnSpace(), mEditPaddingBottom);
+        mTextPaddingLeft = left;
+        mTextPaddingTop = top;
+        mTextPaddingRight = right;
+        mTextPaddingBottom = bottom;
+        super.setPadding(mTextPaddingLeft, mTextPaddingTop + getLabelSpace(),
+                mTextPaddingRight + getBtnSpace(), mTextPaddingBottom);
     }
 
 
@@ -468,10 +498,116 @@ public class HardEditText extends AppCompatEditText {
     }
 
 
-    private void log(String s) {
-        if (DEBUG) {
-            Log.d("HardEditText", s);
-        }
+    public HardEditText setEnableLabel(boolean enable) {
+        enableLabel = enable;
+        return this;
     }
 
+
+    /**
+     * 调用时如果labelText != null，默认会开启label功能，否则关闭
+     *
+     * @param playAnim 是否播放动画
+     */
+    public HardEditText setLabelText(String labelText, boolean playAnim) {
+        mLabelText = labelText;
+        if (labelText != null) {
+            enableLabel = true;
+            if (playAnim) setLabelVisible(true);
+        } else {
+            enableLabel = false;
+            if (playAnim) setLabelVisible(false);
+        }
+        return this;
+    }
+
+    public HardEditText setLabelText(String labelText) {
+        return setLabelText(labelText, false);
+    }
+
+
+    public HardEditText setLabelTextSize(@Px int textSize) {
+        mLabelTextSize = textSize;
+        return this;
+    }
+
+    public HardEditText setLabelTextColor(@ColorInt int color) {
+        mLabelTextColor = color;
+        return this;
+    }
+
+    public HardEditText setEnableClearBtn(boolean enableClearBtn) {
+        this.enableClearBtn = enableClearBtn;
+        return this;
+    }
+
+    public HardEditText setEnablePwVisibleBtn(boolean enablePwVisibleBtn) {
+        this.enablePwVisibleBtn = enablePwVisibleBtn;
+        return this;
+    }
+
+    public HardEditText setEnableHideWithClearBtn(boolean enableHideWithClearBtn) {
+        this.enableHideWithClearBtn = enableHideWithClearBtn;
+        return this;
+    }
+
+    public HardEditText setBackgroundNoLabel(Drawable background) {
+        mBackground = background;
+        return this;
+    }
+
+    public void setClearBtnRes(@DrawableRes int resId) {
+        mClearBtnBitmap = getBitmap(getContext(), resId, -1);
+    }
+
+    public void setPwBtnVisibleRes(@DrawableRes int resId) {
+        mVisibleBtnBitmap = getBitmap(getContext(), resId, -1);
+    }
+
+    public void setPwBtnInvisibleRes(@DrawableRes int resId) {
+        mInvisibleBtnBitmap = getBitmap(getContext(), resId, -1);
+    }
+
+
+    public HardEditText setBtnSize(@Px int btnSize) {
+        mBtnSize = btnSize;
+        return this;
+    }
+
+    public HardEditText setBtnPadding(@Px int btnPadding) {
+        mBtnPadding = btnPadding;
+        return this;
+    }
+
+    public HardEditText setBtnColor(@ColorInt int btnColor) {
+        mClearBtnBitmap = getBitmap(getContext(), mClearBtnDrawable, btnColor);
+        mVisibleBtnBitmap = getBitmap(getContext(), mVisibleBtnDrawable, btnColor);
+        mInvisibleBtnBitmap = getBitmap(getContext(), mInvisibleBtnDrawable, btnColor);
+        return this;
+    }
+
+    public HardEditText setBtnTranslationX(@Px int btnTranslationX) {
+        mBtnTranslationX = btnTranslationX;
+        return this;
+    }
+
+    public HardEditText setLabelGravity(int labelGravity) {
+        mLabelGravity = labelGravity;
+        return this;
+    }
+
+    public HardEditText setLabelPaddingTop(@Px int labelPaddingTop) {
+        mLabelPaddingTop = labelPaddingTop;
+        return this;
+    }
+
+    public HardEditText setLabelPaddingBottom(@Px int labelPaddingBottom) {
+        mLabelPaddingBottom = labelPaddingBottom;
+        return this;
+    }
+
+    public HardEditText setLabelTranslationX(@Px int labelTranslationX) {
+        mLabelTranslationX = labelTranslationX;
+        return this;
+    }
 }
