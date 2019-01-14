@@ -28,11 +28,11 @@
         android:paddingEnd="10dp"
         android:paddingStart="10dp"
         android:paddingTop="10dp"
-        android:text="55555"
+        android:text=""
         app:background="@drawable/selector_btn"
         app:btnPadding="10dp"
         app:btnSize="20dp"
-        app:labelPaddingBottom="6dp"
+
         app:labelPaddingTop="4dp"
         app:labelTextSize="12sp"
         app:labelTranslationX="0dp"
