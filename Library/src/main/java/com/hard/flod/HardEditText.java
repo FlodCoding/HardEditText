@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
@@ -48,9 +49,9 @@ import android.view.MotionEvent;
 public class HardEditText extends AppCompatEditText {
 
     private boolean DEBUG = true;
-    private static final int DEFAULT_CLEAR_ICON = R.drawable.ic_clear_black_24dp;
-    private static final int DEFAULT_VISIBLE_ICON = R.drawable.ic_visibility_black_24dp;
-    private static final int DEFAULT_INVISIBLE_ICON = R.drawable.ic_visibility_off_black_24dp;
+    private static final int DEFAULT_CLEAR_ICON = R.drawable.ic_clear_24dp;
+    private static final int DEFAULT_VISIBLE_ICON = R.drawable.ic_visibility_24dp;
+    private static final int DEFAULT_INVISIBLE_ICON = R.drawable.ic_visibility_off_24dp;
 
     private final int DEFAULT_BTN_SIZE = getResources().getDimensionPixelSize(R.dimen.HardEditText_default_btnSize);
     private final int DEFAULT_BTN_PADDING = getResources().getDimensionPixelSize(R.dimen.HardEditText_default_btnPadding);
@@ -71,7 +72,8 @@ public class HardEditText extends AppCompatEditText {
     private Drawable mBackground;
 
     private int mBtnSize;           //按钮的高度和宽度（限定为方形）
-    private int mBtnPadding;
+    private int mBtnPadding;        //Btn Padding
+    private int mBtnColor;          //Btn的颜色
     private int mBtnTranslationX;   //Btn的水平偏移量
 
     private String mLabelText;      //label的文字内容
@@ -135,6 +137,7 @@ public class HardEditText extends AppCompatEditText {
         enableHideWithClearBtn = array.getBoolean(R.styleable.HardEditText_enableHideWithClearBtn, true);
         mBtnSize = array.getDimensionPixelSize(R.styleable.HardEditText_btnSize, DEFAULT_BTN_SIZE);
         mBtnPadding = array.getDimensionPixelSize(R.styleable.HardEditText_btnPadding, DEFAULT_BTN_PADDING);
+        mBtnColor = array.getColor(R.styleable.HardEditText_btnColor, -1);
         mBtnTranslationX = array.getDimensionPixelSize(R.styleable.HardEditText_btnTranslationX, 0);
 
 
@@ -157,9 +160,9 @@ public class HardEditText extends AppCompatEditText {
         array.recycle();
 
         //拿到三个Icon的bitmap
-        mClearBtnBitmap = getBitmap(context, clearBtnResId);
-        mVisibleBtnBitmap = getBitmap(context, visibleBtnResId);
-        mInvisibleBtnBitmap = getBitmap(context, invisibleBtnResId);
+        mClearBtnBitmap = getBitmap(context, clearBtnResId, mBtnColor);
+        mVisibleBtnBitmap = getBitmap(context, visibleBtnResId, mBtnColor);
+        mInvisibleBtnBitmap = getBitmap(context, invisibleBtnResId, mBtnColor);
         if (backgroundResId > 0) mBackground = ContextCompat.getDrawable(context, backgroundResId);
 
         isPasswordInputType = isPasswordInputType(getInputType());
@@ -309,9 +312,12 @@ public class HardEditText extends AppCompatEditText {
     }
 
 
-    private Bitmap getBitmap(Context context, int resId) {
+    private Bitmap getBitmap(Context context, int resId, int color) {
         Drawable drawable = ContextCompat.getDrawable(context, resId);
         if (drawable != null) {
+            if (color != -1) {
+                drawable.setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
+            }
             Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());

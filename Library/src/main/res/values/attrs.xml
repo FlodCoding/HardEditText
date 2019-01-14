@@ -9,6 +9,7 @@
         <attr name="invisibleSrc" format="reference" />
         <attr name="btnSize" format="dimension" />
         <attr name="btnPadding" format="dimension" />
+        <attr name="btnColor" format="reference" />
         <attr name="btnTranslationX" format="dimension"/>
 
         <attr name="enableLabel" format="boolean"/>
