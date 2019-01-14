@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="HardEditText">
+        <attr name="enableClearBtn" format="boolean" />
+        <attr name="enableVisibleBtn" format="boolean" />
+        <attr name="enableHideWithClearBtn" format="boolean" />
+        <attr name="clearBtnSrc" format="reference" />
+        <attr name="visibleBtnSrc" format="reference" />
+        <attr name="invisibleSrc" format="reference" />
+        <attr name="btnSize" format="dimension" />
+        <attr name="btnPadding" format="dimension" />
+        <attr name="btnTranslationX" format="dimension"/>
+
+        <attr name="enableLabel" format="boolean"/>
+        <attr name="labelText" format="string"/>
+        <attr name="labelTextSize" format="dimension"/>
+        <attr name="labelTextColor" format="color"/>
+        <attr name="labelPaddingTop" format="dimension"/>
+        <attr name="labelPaddingBottom" format="dimension"/>
+        <attr name="labelTranslationX" format="dimension"/>
+
+        <attr name="background" format="reference"/>
+
+    </declare-styleable>
+
+    <dimen name="HardEditText_default_btnSize">20dp</dimen>
+    <dimen name="HardEditText_default_btnPadding">5dp</dimen>
+
+    <dimen name="HardEditText_default_labelTextSize">10sp</dimen>
+    <dimen name="HardEditText_default_labelPaddingTop">0dp</dimen>
+    <dimen name="HardEditText_default_labelPaddingBottom">20dp</dimen>
+
+</resources>
