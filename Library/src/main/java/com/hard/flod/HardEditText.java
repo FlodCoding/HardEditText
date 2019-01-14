@@ -43,6 +43,7 @@ import android.view.MotionEvent;
  * 14、setDrawable 自定义图标
  * 15、Label 文字换行
  * 16、background选中动画
+ * 17、Label 动态更换文字
  */
 public class HardEditText extends AppCompatEditText {
 
@@ -130,8 +131,8 @@ public class HardEditText extends AppCompatEditText {
 
         TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.HardEditText);
         enableClearBtn = array.getBoolean(R.styleable.HardEditText_enableClearBtn, true);
-        enablePwVisibleBtn = array.getBoolean(R.styleable.HardEditText_enableClearBtn, false);
-        enableHideWithClearBtn = array.getBoolean(R.styleable.HardEditText_enableHideWithClearBtn, false);
+        enablePwVisibleBtn = array.getBoolean(R.styleable.HardEditText_enablePwVisibleBtn, false);
+        enableHideWithClearBtn = array.getBoolean(R.styleable.HardEditText_enableHideWithClearBtn, true);
         mBtnSize = array.getDimensionPixelSize(R.styleable.HardEditText_btnSize, DEFAULT_BTN_SIZE);
         mBtnPadding = array.getDimensionPixelSize(R.styleable.HardEditText_btnPadding, DEFAULT_BTN_PADDING);
         mBtnTranslationX = array.getDimensionPixelSize(R.styleable.HardEditText_btnTranslationX, 0);
@@ -151,17 +152,9 @@ public class HardEditText extends AppCompatEditText {
         mLabelPaddingBottom = array.getDimensionPixelSize(R.styleable.HardEditText_labelPaddingBottom, DEFAULT_LABEL_PADDING_BOTTOM);
         mLabelTranslationX = array.getDimensionPixelSize(R.styleable.HardEditText_labelTranslationX, 0);
 
-        if (mLabelText == null) {
-            if (getHint() != null) {
-                mLabelText = getHint().toString();
-            }else {
-                mLabelText = "";
-            }
-
-        }
+        if (mLabelText == null) mLabelText = getHint().toString();
 
         array.recycle();
-
 
         //拿到三个Icon的bitmap
         mClearBtnBitmap = getBitmap(context, clearBtnResId);
@@ -298,7 +291,7 @@ public class HardEditText extends AppCompatEditText {
             int startY = (int) (mLabelPaddingTop - mTextPaint.getFontMetrics().top + (1 - animValue) * mLabelTextSize) + getScrollY();
             if ((mLabelGravity & Gravity.START) == Gravity.START) {
                 //left
-                startX += mEditPaddingLeft;
+                startX += 0;
             } else if ((mLabelGravity & Gravity.END) == Gravity.END) {
                 //right
                 startX += (int) (getWidth() - mEditPaddingRight - mTextPaint.measureText(mLabelText));

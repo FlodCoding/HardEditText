@@ -2,7 +2,7 @@
 <resources>
     <declare-styleable name="HardEditText">
         <attr name="enableClearBtn" format="boolean" />
-        <attr name="enableVisibleBtn" format="boolean" />
+        <attr name="enablePwVisibleBtn" format="boolean" />
         <attr name="enableHideWithClearBtn" format="boolean" />
         <attr name="clearBtnSrc" format="reference" />
         <attr name="visibleBtnSrc" format="reference" />

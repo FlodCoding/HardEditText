@@ -32,10 +32,10 @@
         app:background="@drawable/selector_btn"
         app:btnPadding="10dp"
         app:btnSize="20dp"
-
         app:labelPaddingTop="4dp"
         app:labelTextSize="12sp"
         app:labelTranslationX="0dp"
+        app:enablePwVisibleBtn="true"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
 </android.support.constraint.ConstraintLayout>
