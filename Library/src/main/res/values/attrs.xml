@@ -18,7 +18,7 @@
         <attr name="labelPaddingTop" format="dimension"/>
         <attr name="labelPaddingBottom" format="dimension"/>
         <attr name="labelTranslationX" format="dimension"/>
-        
+
         <attr name="background" format="reference"/>
 
     </declare-styleable>

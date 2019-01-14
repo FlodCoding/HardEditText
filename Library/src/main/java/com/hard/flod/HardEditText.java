@@ -130,8 +130,8 @@ public class HardEditText extends AppCompatEditText {
 
         TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.HardEditText);
         enableClearBtn = array.getBoolean(R.styleable.HardEditText_enableClearBtn, true);
-        enablePwVisibleBtn = array.getBoolean(R.styleable.HardEditText_enableClearBtn, true);
-        enableHideWithClearBtn = array.getBoolean(R.styleable.HardEditText_enableHideWithClearBtn, true);
+        enablePwVisibleBtn = array.getBoolean(R.styleable.HardEditText_enableClearBtn, false);
+        enableHideWithClearBtn = array.getBoolean(R.styleable.HardEditText_enableHideWithClearBtn, false);
         mBtnSize = array.getDimensionPixelSize(R.styleable.HardEditText_btnSize, DEFAULT_BTN_SIZE);
         mBtnPadding = array.getDimensionPixelSize(R.styleable.HardEditText_btnPadding, DEFAULT_BTN_PADDING);
         mBtnTranslationX = array.getDimensionPixelSize(R.styleable.HardEditText_btnTranslationX, 0);
