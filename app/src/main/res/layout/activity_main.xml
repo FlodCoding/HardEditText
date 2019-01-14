@@ -19,7 +19,23 @@
 
     <com.hard.flod.HardEditText
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="80dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginStart="15dp"
+        android:background="@null"
+        android:hint="请输入密码"
+        android:paddingBottom="10dp"
+        android:paddingEnd="10dp"
+        android:paddingStart="10dp"
+        android:paddingTop="10dp"
+        android:text="55555"
+        app:background="@drawable/selector_btn"
+        app:btnPadding="10dp"
+        app:btnSize="20dp"
+        app:labelPaddingBottom="6dp"
+        app:labelPaddingTop="4dp"
+        app:labelTextSize="12sp"
+        app:labelTranslationX="0dp"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
 </android.support.constraint.ConstraintLayout>

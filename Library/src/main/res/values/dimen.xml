@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="HardEditText_default_btnSize">20dp</dimen>
+    <dimen name="HardEditText_default_btnPadding">5dp</dimen>
+
+    <dimen name="HardEditText_default_labelTextSize">10sp</dimen>
+    <dimen name="HardEditText_default_labelPaddingTop">0dp</dimen>
+    <dimen name="HardEditText_default_labelPaddingBottom">20dp</dimen>
+</resources>

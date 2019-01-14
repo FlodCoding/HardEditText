@@ -154,6 +154,8 @@ public class HardEditText extends AppCompatEditText {
         if (mLabelText == null) {
             if (getHint() != null) {
                 mLabelText = getHint().toString();
+            }else {
+                mLabelText = "";
             }
 
         }

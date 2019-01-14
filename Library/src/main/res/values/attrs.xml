@@ -18,16 +18,11 @@
         <attr name="labelPaddingTop" format="dimension"/>
         <attr name="labelPaddingBottom" format="dimension"/>
         <attr name="labelTranslationX" format="dimension"/>
-
+        
         <attr name="background" format="reference"/>
 
     </declare-styleable>
 
-    <dimen name="HardEditText_default_btnSize">20dp</dimen>
-    <dimen name="HardEditText_default_btnPadding">5dp</dimen>
 
-    <dimen name="HardEditText_default_labelTextSize">10sp</dimen>
-    <dimen name="HardEditText_default_labelPaddingTop">0dp</dimen>
-    <dimen name="HardEditText_default_labelPaddingBottom">20dp</dimen>
 
 </resources>
