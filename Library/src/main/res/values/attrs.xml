@@ -20,6 +20,7 @@
         <attr name="labelPaddingBottom" format="dimension"/>
         <attr name="labelTranslationX" format="dimension"/>
 
+        <attr name="animDuration" format="integer"/>
         <attr name="background" format="reference"/>
 
     </declare-styleable>

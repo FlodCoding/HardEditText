@@ -23,6 +23,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.animation.OvershootInterpolator;
 
 /**
  * SimpleDes:
@@ -41,13 +42,14 @@ import android.view.MotionEvent;
  * 8、Label Color和Gravity  Gravity 暂时随EditText一样 ✔
  * 9、新写一个设置background的方法，为了将label放到外面来 ✔
  * 10、将background的states转移到自己定义background上   ✔
- * 11、高度或者宽度写太小会gg
- * 12、在写xml时能看到btn和label
- * 13、setErr 图标的处理 ：先隐藏自己的图标，输入之后再重新显示
- * 15、Label 文字换行
- * 16、background选中动画
- * 17、Label 动态更换文字 ✔
- * 18、按钮误触问题
+ * 11、在写xml时能看到btn和label ✔
+ * 12、setErr 图标的处理 ✔
+ * 13、background选中动画
+ * 14、Label 动态更换文字 ✔
+ * 15、按钮误触问题 ✔
+ * 16、设置全局动画时间 ✔
+ * 17、高度或者宽度写太小会gg
+ * 18、Label 文字换行  idea 有\n遇到分成多组。每组超过宽度后换行
  */
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class HardEditText extends AppCompatEditText {
@@ -59,6 +61,7 @@ public class HardEditText extends AppCompatEditText {
             Log.d("HardEditText", s);
         }
     }
+
     private static final int DEFAULT_CLEAR_ICON = R.drawable.ic_clear_24dp;
     private static final int DEFAULT_VISIBLE_ICON = R.drawable.ic_visibility_24dp;
     private static final int DEFAULT_INVISIBLE_ICON = R.drawable.ic_visibility_off_24dp;
@@ -69,7 +72,6 @@ public class HardEditText extends AppCompatEditText {
     private final int DEFAULT_LABEL_TEXT_SIZE = getResources().getDimensionPixelSize(R.dimen.HardEditText_default_labelTextSize);
     private final int DEFAULT_LABEL_PADDING_TOP = getResources().getDimensionPixelSize(R.dimen.HardEditText_default_labelPaddingTop);
     private final int DEFAULT_LABEL_PADDING_BOTTOM = getResources().getDimensionPixelSize(R.dimen.HardEditText_default_labelPaddingBottom);
-
 
     private boolean enableClearBtn;          //开启清除文本按钮功能
     private boolean enablePwVisibleBtn;      //开启密码显示和隐藏功能
@@ -110,6 +112,7 @@ public class HardEditText extends AppCompatEditText {
 
 
     private boolean isClearBtnVisible;
+    private boolean isPwBtnVisible;
     private boolean isPasswordInputType;
     private boolean isLabelVisible;
 
@@ -119,13 +122,12 @@ public class HardEditText extends AppCompatEditText {
 
     private ValueAnimator mBtnAnimator;     //按钮动画
     private ValueAnimator mLabelAnimator;   //Label动画
+
     private float mBtnFraction;
     private float mLabelFraction;
 
     private boolean isErr;
-
-
-    private static final int VALUE_ANIMATOR_TIME = 200;  //全局动画时间
+    private int callTime;
 
 
     public HardEditText(Context context) {
@@ -170,6 +172,8 @@ public class HardEditText extends AppCompatEditText {
         mLabelPaddingTop = array.getDimensionPixelSize(R.styleable.HardEditText_labelPaddingTop, DEFAULT_LABEL_PADDING_TOP);
         mLabelPaddingBottom = array.getDimensionPixelSize(R.styleable.HardEditText_labelPaddingBottom, DEFAULT_LABEL_PADDING_BOTTOM);
         mLabelTranslationX = array.getDimensionPixelSize(R.styleable.HardEditText_labelTranslationX, 0);
+
+        int animDuration = array.getInt(R.styleable.HardEditText_animDuration, 200);
         array.recycle();
 
         //getBitmap and setBitmapColor
@@ -179,23 +183,30 @@ public class HardEditText extends AppCompatEditText {
         if (backgroundResId > 0) mBackground = ContextCompat.getDrawable(context, backgroundResId);
 
         isPasswordInputType = isPasswordInputType(getInputType());
+        if (enablePwVisibleBtn && !enableHideWithClearBtn)
+            isPwBtnVisible = true; //PwVisibleBtn always show
 
-        mBtnAnimator = ValueAnimator.ofFloat(0f, 1f).setDuration(VALUE_ANIMATOR_TIME);
+
+        mBtnAnimator = ValueAnimator.ofFloat(0f, 1f).setDuration(animDuration);
         mBtnAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 //Fraction value is [0.0,1.0]
                 mBtnFraction = animation.getAnimatedFraction();
+
             }
         });
 
-        mLabelAnimator = ValueAnimator.ofFloat(0f, 1f).setDuration(VALUE_ANIMATOR_TIME);
+        mLabelAnimator = ValueAnimator.ofFloat(0f, 1f).setDuration(animDuration);
+        mLabelAnimator.setInterpolator(new OvershootInterpolator());
         mLabelAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 mLabelFraction = animation.getAnimatedFraction();
+
             }
         });
+
 
         //if mLabelText is null. it will be hintText;
         if (mLabelText == null && getHint() != null) mLabelText = getHint().toString();
@@ -245,16 +256,12 @@ public class HardEditText extends AppCompatEditText {
         if (mBtnAnimator.isRunning()) {
             //Anim part
             drawClearBtn(mBtnFraction, canvas);
-            if (enableHideWithClearBtn)
-                drawVisibleBtn(mBtnFraction, canvas);
-            else drawVisibleBtn(1, canvas);
+            drawVisibleBtn(enableHideWithClearBtn ? mBtnFraction : 1, canvas);
             invalidate = true;
         } else {
             //Static part
             drawClearBtn(isClearBtnVisible ? 1 : 0, canvas);
-            if (enableHideWithClearBtn)
-                drawVisibleBtn(isClearBtnVisible ? 1 : 0, canvas);
-            else drawVisibleBtn(1, canvas);
+            drawVisibleBtn(isPwBtnVisible ? 1 : 0, canvas);
         }
 
         //drawLabel
@@ -371,20 +378,19 @@ public class HardEditText extends AppCompatEditText {
     public void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
         super.onTextChanged(text, start, lengthBefore, lengthAfter);
         if (isErr){
-            setPadding(mTextPaddingLeft, mTextPaddingTop, mTextPaddingRight , mTextPaddingBottom);
+            if (!enableHideWithClearBtn) isPwBtnVisible = true;
             isErr = false;
+            setPadding(mTextPaddingLeft, mTextPaddingTop, mTextPaddingRight, mTextPaddingBottom);
         }
 
-        if (enableClearBtn) {
-            if (text.length() > 0) {
-                if (!isClearBtnVisible) setClearBtnVisible(true);
-                if (!isLabelVisible) setLabelVisible(true);
-            } else {
-                if (isClearBtnVisible) setClearBtnVisible(false);
-                if (isLabelVisible) setLabelVisible(false);
-            }
-
+        if (text.length() > 0) {
+            if (enableClearBtn && !isClearBtnVisible) setClearBtnVisible(true);
+            if (enableLabel && !isLabelVisible) setLabelVisible(true);
+        } else {
+            if (enableClearBtn && isClearBtnVisible) setClearBtnVisible(false);
+            if (enableLabel && isLabelVisible) setLabelVisible(false);
         }
+
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -403,10 +409,10 @@ public class HardEditText extends AppCompatEditText {
                         && visibleBtnRight - mBtnSize < event.getX()
                         && getLabelSpace() + mTextPaddingTop < event.getY();
 
+                //do not return true,otherwise we can't get backgroundDrawableState.
                 if (enableClearBtn && isClearBtnVisible && isClearBtnTouch) {
                     setText("");
-                    //do not return true,otherwise can't getDrawableState().
-                } else if (enablePwVisibleBtn && isPwVisibleBtnTouch) {
+                } else if (enablePwVisibleBtn && isPwBtnVisible && isPwVisibleBtnTouch) {
                     isPasswordInputType = !isPasswordInputType;
                     transformPasswordMode(isPasswordInputType);
                 }
@@ -416,7 +422,10 @@ public class HardEditText extends AppCompatEditText {
     }
 
     private void setClearBtnVisible(boolean visible) {
+        callTime = 1;
         isClearBtnVisible = visible;
+        if (enableHideWithClearBtn)
+            isPwBtnVisible = visible;
         if (visible) {
             mBtnAnimator.start();   //mBtnFraction 0->1
         } else {
@@ -463,8 +472,9 @@ public class HardEditText extends AppCompatEditText {
     @Override
     public void setError(CharSequence error) {
         isErr = true;
-        super.setPadding(mTextPaddingLeft, mTextPaddingTop, mTextPaddingRight , mTextPaddingBottom);
+        super.setPadding(mTextPaddingLeft, mTextPaddingTop + getLabelSpace(), mTextPaddingRight, mTextPaddingBottom);
         isClearBtnVisible = false;
+        isPwBtnVisible = false;
 
         super.setError(error);
     }
@@ -609,5 +619,23 @@ public class HardEditText extends AppCompatEditText {
     public HardEditText setLabelTranslationX(@Px int labelTranslationX) {
         mLabelTranslationX = labelTranslationX;
         return this;
+    }
+
+
+    /**
+     * all Animator will set this value
+     */
+    public HardEditText setAnimDuration(int millisecond){
+        mBtnAnimator.setDuration(millisecond);
+        mLabelAnimator.setDuration(millisecond);
+        return this;
+    }
+
+    public ValueAnimator getBtnAnimator() {
+        return mBtnAnimator;
+    }
+
+    public ValueAnimator getLabelAnimator() {
+        return mLabelAnimator;
     }
 }
