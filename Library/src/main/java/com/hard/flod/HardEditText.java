@@ -73,10 +73,10 @@ public class HardEditText extends AppCompatEditText {
     private final int DEFAULT_LABEL_PADDING_TOP = getResources().getDimensionPixelSize(R.dimen.HardEditText_default_labelPaddingTop);
     private final int DEFAULT_LABEL_PADDING_BOTTOM = getResources().getDimensionPixelSize(R.dimen.HardEditText_default_labelPaddingBottom);
 
-    private boolean enableClearBtn;          //开启清除文本按钮功能
-    private boolean enablePwVisibleBtn;      //开启密码显示和隐藏功能
-    private boolean enableHideWithClearBtn;  //是否和ClearBtn一起消失
-    private boolean enableLabel;             //开启Label的功能
+    private boolean enableClearBtn;
+    private boolean enablePwVisibleBtn;
+    private boolean enableHideWithClearBtn; //all btn will hide with clearBtn
+    private boolean enableLabel;
 
 
     private Drawable mClearBtnDrawable;
@@ -88,19 +88,27 @@ public class HardEditText extends AppCompatEditText {
     private Bitmap mVisibleBtnBitmap;
     private Bitmap mInvisibleBtnBitmap;
 
-    private int mBtnSize;           //按钮的高度和宽度（限定为方形）
-    private int mBtnPadding;        //Btn Padding
-    private int mBtnTranslationX;   //Btn的水平偏移量
+    private Rect mClearBtnRect = new Rect();
+    private Rect mPwVisibleBtnRect = new Rect();
+    private Rect mTextRect = new Rect();
 
-    private String mLabelText;      //label的文字内容
-    private int mLabelTextSize;     //label的文字大小
-    private int mLabelTextColor;    //label的文字颜色
-    private int mLabelGravity;      //label的Gravity: left | center | right
-    private int mLabelPaddingTop;   //label PaddingTop
-    private int mLabelPaddingBottom;//label PaddingBottom（与文字）
-    private int mLabelTranslationX; //label的水平偏移量
+    private int mBtnSize;           //all btn size
+    private int mBtnPadding;        //all btn padding
+    private int mBtnTranslationX;   //Horizontal Translation
 
+    private String mLabelText;      //if no setLabelText,it default hintText
+    private int mLabelTextSize;     //@Px
+    private int mLabelTextColor;    //@ColorInt
+    private int mLabelGravity;      //Gravity: left | center | right
+    private int mLabelPaddingTop;
+    private int mLabelPaddingBottom;
+    private int mLabelTranslationX; //Horizontal Translation
 
+    /**
+     * @see #setPadding(int, int, int, int)
+     * when view {@link #onFinishInflate}
+     * save original padding and resetPadding for btn and label space need
+     */
     private int mTextPaddingLeft;
     private int mTextPaddingRight;
     private int mTextPaddingTop;
@@ -110,24 +118,31 @@ public class HardEditText extends AppCompatEditText {
     private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private TextPaint mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
-
+    /**
+     * @see #setClearBtnVisible#setLabelVisible
+     * they define current visibility
+     */
     private boolean isClearBtnVisible;
     private boolean isPwBtnVisible;
-    private boolean isPasswordInputType;
     private boolean isLabelVisible;
 
-    private Rect mClearBtnRect = new Rect();
-    private Rect mPwVisibleBtnRect = new Rect();
-    private Rect mTextRect = new Rect();
+    /**
+     * @see #transformPasswordMode#isPasswordInputType(int)
+     */
+    private boolean isPasswordInputType;
 
-    private ValueAnimator mBtnAnimator;     //按钮动画
-    private ValueAnimator mLabelAnimator;   //Label动画
+    //for show and hide Animator
+    private ValueAnimator mBtnAnimator;
+    private ValueAnimator mLabelAnimator;
 
+    //Animator Fraction [0,1]
     private float mBtnFraction;
     private float mLabelFraction;
 
+    /**
+     * @see #setError
+     */
     private boolean isErr;
-    private int callTime;
 
 
     public HardEditText(Context context) {
@@ -138,7 +153,6 @@ public class HardEditText extends AppCompatEditText {
     public HardEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context, attrs);
-
     }
 
     public HardEditText(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -215,8 +229,8 @@ public class HardEditText extends AppCompatEditText {
         if (getRootView().isInEditMode()) {
             //Preview
             isClearBtnVisible = true;
-            isPasswordInputType = true;
             isLabelVisible = true;
+            isPwBtnVisible = true;
         }
     }
 
@@ -422,7 +436,6 @@ public class HardEditText extends AppCompatEditText {
     }
 
     private void setClearBtnVisible(boolean visible) {
-        callTime = 1;
         isClearBtnVisible = visible;
         if (enableHideWithClearBtn)
             isPwBtnVisible = visible;
@@ -456,40 +469,6 @@ public class HardEditText extends AppCompatEditText {
         invalidate();
     }
 
-
-    private boolean isPasswordInputType(int inputType) {
-        final int variation =
-                inputType & (InputType.TYPE_MASK_CLASS | InputType.TYPE_MASK_VARIATION);
-        return variation
-                == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)
-                || variation
-                == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD)
-                || variation
-                == (InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
-    }
-
-
-    @Override
-    public void setError(CharSequence error) {
-        isErr = true;
-        super.setPadding(mTextPaddingLeft, mTextPaddingTop + getLabelSpace(), mTextPaddingRight, mTextPaddingBottom);
-        isClearBtnVisible = false;
-        isPwBtnVisible = false;
-
-        super.setError(error);
-    }
-
-    @Override
-    public void setPadding(int left, int top, int right, int bottom) {
-        mTextPaddingLeft = left;
-        mTextPaddingTop = top;
-        mTextPaddingRight = right;
-        mTextPaddingBottom = bottom;
-        super.setPadding(mTextPaddingLeft, mTextPaddingTop + getLabelSpace(),
-                mTextPaddingRight + getBtnSpace(), mTextPaddingBottom);
-    }
-
-
     private int getBtnSpace() {
         int width = 0;
         if (enablePwVisibleBtn) {
@@ -508,16 +487,54 @@ public class HardEditText extends AppCompatEditText {
     }
 
 
+
+    private boolean isPasswordInputType(int inputType) {
+        final int variation =
+                inputType & (InputType.TYPE_MASK_CLASS | InputType.TYPE_MASK_VARIATION);
+        return variation
+                == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)
+                || variation
+                == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD)
+                || variation
+                == (InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+    }
+
+
+    /**
+     * it will be true.then reset padding and hide btn
+     */
+    @Override
+    public void setError(CharSequence error) {
+        isErr = true;
+        super.setPadding(mTextPaddingLeft, mTextPaddingTop + getLabelSpace(), mTextPaddingRight, mTextPaddingBottom);
+        isClearBtnVisible = false;
+        isPwBtnVisible = false;
+        super.setError(error);
+    }
+
+    /**
+     * save original padding and resetPadding for btn and label space need
+     */
+    @Override
+    public void setPadding(int left, int top, int right, int bottom) {
+        mTextPaddingLeft = left;
+        mTextPaddingTop = top;
+        mTextPaddingRight = right;
+        mTextPaddingBottom = bottom;
+        super.setPadding(mTextPaddingLeft, mTextPaddingTop + getLabelSpace(),
+                mTextPaddingRight + getBtnSpace(), mTextPaddingBottom);
+    }
+
+
     public HardEditText setEnableLabel(boolean enable) {
         enableLabel = enable;
         return this;
     }
 
-
     /**
-     * 调用时如果labelText != null，默认会开启label功能，否则关闭
+     * if labelText is no null,enableLabel will be true.otherwise enableLabel is false.
      *
-     * @param playAnim 是否播放动画
+     * @param playAnim play Show or hide anim
      */
     public HardEditText setLabelText(String labelText, boolean playAnim) {
         mLabelText = labelText;
@@ -531,6 +548,10 @@ public class HardEditText extends AppCompatEditText {
         return this;
     }
 
+    /**
+     * if labelText is no null,enableLabel will be true.otherwise enableLabel is false.
+     * no anim
+     */
     public HardEditText setLabelText(String labelText) {
         return setLabelText(labelText, false);
     }
