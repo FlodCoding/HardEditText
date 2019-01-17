@@ -326,6 +326,9 @@ public class HardEditText extends AppCompatEditText {
 
     private void drawLabel(float animValue, Canvas canvas) {
         if (enableLabel && mLabelText != null && animValue != 0) {
+            mTextPaint.setAlpha((int) (255 * animValue));
+            mTextPaint.setColor(mLabelTextColor);
+            mTextPaint.setTextSize(mLabelTextSize);
             int startX = mLabelTranslationX + getScrollX();
             //drawText start baseLine, so startY need sub MetricsTop
             int startY = (int) (mLabelPaddingTop - mTextPaint.getFontMetrics().top + (1 - animValue) * mLabelTextSize) + getScrollY();
@@ -339,10 +342,6 @@ public class HardEditText extends AppCompatEditText {
                 //center
                 startX += (int) (getWidth() - mTextPaint.measureText(mLabelText)) / 2;
             }
-
-            mTextPaint.setAlpha((int) (255 * animValue));
-            mTextPaint.setColor(mLabelTextColor);
-            mTextPaint.setTextSize(mLabelTextSize);
             canvas.drawText(mLabelText, startX, startY, mTextPaint);
         }
 
