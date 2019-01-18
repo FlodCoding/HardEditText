@@ -51,6 +51,7 @@ import android.view.animation.OvershootInterpolator;
  * 17、高度或者宽度写太小会gg
  * 18、Label 文字换行  idea 有\n遇到分成多组。每组超过宽度后换行
  * 19、Label 文字一直保持 ✔
+ * 20、密码长按显示功能
  */
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class HardEditText extends AppCompatEditText {
