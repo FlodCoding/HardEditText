@@ -302,7 +302,7 @@ public class HardEditText extends AppCompatEditText {
             // if EditText is singleLine ,when the text over the width,EditText will scroll left
             // so we need add ScrollX
             mClearBtnRect.right = (int) (getWidth() + getScrollX() + mBtnTranslationX
-                    - mBtnPadding - mTextPaddingRight - (mBtnSize - mBtnSize * animValue) / 2);
+                    - mTextPaddingRight - (mBtnSize - mBtnSize * animValue) / 2);
             if (enablePwVisibleBtn) //if we have the PwVisibleBtn at right,add one mBtnSize and padding
                 mClearBtnRect.right -= mBtnSize + mBtnPadding;
             mClearBtnRect.left = (int) (mClearBtnRect.right - mBtnSize * animValue);
@@ -317,7 +317,7 @@ public class HardEditText extends AppCompatEditText {
     private void drawVisibleBtn(float animValue, Canvas canvas) {
         if (enablePwVisibleBtn && animValue != 0) {
             mPwVisibleBtnRect.right = (int) (getWidth() + getScrollX() + mBtnTranslationX
-                    - mBtnPadding - mTextPaddingRight - (mBtnSize - mBtnSize * animValue) / 2);
+                    - mTextPaddingRight - (mBtnSize - mBtnSize * animValue) / 2);
             mPwVisibleBtnRect.left = (int) (mPwVisibleBtnRect.right - mBtnSize * animValue);
             mPwVisibleBtnRect.top = (int) ((getHeight() + getLabelSpace() - mBtnSize * animValue) / 2 + getScrollY());
             mPwVisibleBtnRect.bottom = (int) (mPwVisibleBtnRect.top + mBtnSize * animValue);
@@ -418,10 +418,9 @@ public class HardEditText extends AppCompatEditText {
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_UP) {
             if (enableClearBtn || enablePwVisibleBtn) {
-                int visibleBtnRight = getWidth() + mBtnTranslationX - mBtnPadding - mTextPaddingRight;
-                int clearBtnRight = visibleBtnRight;
-                if (enablePwVisibleBtn)
-                    clearBtnRight -= mBtnSize + mBtnPadding;
+                int visibleBtnRight = mPwVisibleBtnRect.right - getScrollX();
+                int clearBtnRight = mClearBtnRect.right - getScrollX();
+
                 boolean isClearBtnTouch = clearBtnRight > event.getX()
                         && clearBtnRight - mBtnSize < event.getX()
                         && getLabelSpace() + mTextPaddingTop < event.getY();
@@ -487,8 +486,8 @@ public class HardEditText extends AppCompatEditText {
         if (enableClearBtn) {
             width += mBtnPadding + mBtnSize;
         }
-        if (enablePwVisibleBtn || enableClearBtn)
-            width += mBtnPadding;
+        /*if (enablePwVisibleBtn || enableClearBtn)
+            width += mBtnPadding;*/
         return width;
     }
 
