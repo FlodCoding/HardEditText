@@ -4,6 +4,7 @@
         <attr name="enableClearBtn" format="boolean" />
         <attr name="enablePwVisibleBtn" format="boolean" />
         <attr name="enableHideWithClearBtn" format="boolean" />
+        <attr name="enableLabelKeepShowing" format="boolean" />
         <attr name="clearBtnSrc" format="reference" />
         <attr name="visibleBtnSrc" format="reference" />
         <attr name="invisibleSrc" format="reference" />
