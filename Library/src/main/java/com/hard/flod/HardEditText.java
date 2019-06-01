@@ -50,6 +50,7 @@ import android.view.animation.OvershootInterpolator;
  * 16、设置全局动画时间 ✔
  * 17、高度或者宽度写太小会gg
  * 18、Label 文字换行  idea 有\n遇到分成多组。每组超过宽度后换行
+ * 19、按钮设置涟漪效果
  */
 @SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class HardEditText extends AppCompatEditText {
@@ -207,6 +208,7 @@ public class HardEditText extends AppCompatEditText {
             public void onAnimationUpdate(ValueAnimator animation) {
                 //Fraction value is [0.0,1.0]
                 mBtnFraction = animation.getAnimatedFraction();
+                Log.d("HardEditText", "mBtnAnimator: " + mBtnFraction);
 
             }
         });
@@ -377,7 +379,7 @@ public class HardEditText extends AppCompatEditText {
     @Override
     protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
         super.onFocusChanged(focused, direction, previouslyFocusedRect);
-        if (enableClearBtn) {
+        if (enableClearBtn && !isErr) {
             if (focused && getText() != null && getText().length() > 0) {
                 if (!isClearBtnVisible) setClearBtnVisible(true);
             } else {
@@ -505,11 +507,29 @@ public class HardEditText extends AppCompatEditText {
      */
     @Override
     public void setError(CharSequence error) {
+        onSetError();
+        super.setError(error);
+    }
+
+    @Override
+    public void setError(CharSequence error, Drawable icon) {
+        if (error != null && icon != null) {
+            onSetError();
+
+            //setIconBounds
+            if (icon.getBounds().right == 0) {
+                icon.setBounds(0, 0, icon.getIntrinsicWidth(), icon.getIntrinsicHeight());
+            }
+        }
+        super.setError(error, icon);
+    }
+
+    private void onSetError() {
         isErr = true;
         super.setPadding(mTextPaddingLeft, mTextPaddingTop + getLabelSpace(), mTextPaddingRight, mTextPaddingBottom);
         isClearBtnVisible = false;
         isPwBtnVisible = false;
-        super.setError(error);
+        mBtnFraction = 0;
     }
 
     /**
